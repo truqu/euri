@@ -11,7 +11,7 @@
         ]
        ).
 
-%% Record and macro definitions
+%% Record, type, and macro definitions
 -record( uri
        , { scheme :: nonempty_string()
          , host :: nonempty_string()
@@ -21,13 +21,29 @@
          }
        ).
 
+-opaque uri() :: #uri{}.
+
+-type args() :: #{ scheme := nonempty_string()
+                 , host := nonempty_string()
+                 , port := non_neg_integer()
+                 , path := string()
+                 , query := [{nonempty_string(), boolean() | integer() | string()}]
+                 }.
+
+%% Type exports
+-export_type([ uri/0
+             , args/0
+             ]).
+
 %%%-----------------------------------------------------------------------------
 %%% API functions
 %%%-----------------------------------------------------------------------------
 
+-spec new() -> uri().
 new() ->
   new(#{}).
 
+-spec new(args()) -> uri().
 new(Args) ->
   #uri{ scheme = maps:get(scheme, Args, "https")
       , host = maps:get(host, Args, "localhost")
@@ -36,6 +52,7 @@ new(Args) ->
       , query = maps:get(query, Args, [])
       }.
 
+-spec to_string(uri()) -> nonempty_string().
 to_string(U) ->
   lists:flatten(
     [ %% scheme and host

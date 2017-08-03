@@ -9,6 +9,7 @@
 .idea
 .rebar
 .rebar3
+doc
 ebin
 erl_crash.dump
 log
