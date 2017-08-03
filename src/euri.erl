@@ -17,6 +17,7 @@
          , host :: nonempty_string()
          , port :: non_neg_integer()
          , path :: string()
+         , query :: [{nonempty_string(), boolean() | integer() | string()}]
          }
        ).
 
@@ -32,19 +33,28 @@ new(Args) ->
       , host = maps:get(host, Args, "localhost")
       , port = maps:get(port, Args, 80)
       , path = maps:get(path, Args, "")
+      , query = maps:get(query, Args, [])
       }.
 
 to_string(U) ->
   lists:flatten(
-    [ U#uri.scheme, "://", U#uri.host
+    [ %% scheme and host
+      U#uri.scheme, "://", U#uri.host
+      %% port
     , case U#uri.port of
         80 -> [];
         P  -> [":", integer_to_list(P)]
       end
+      %% path
     , case U#uri.path of
         ""           -> "";
         [$/ | _] = P -> encode_path(P);
         _ = P        -> [$/, encode_path(P)]
+      end
+      %% query
+    , case U#uri.query of
+        [] -> [];
+        Q  -> [$?, encode_query(Q)]
       end
     ]
    ).
@@ -62,6 +72,20 @@ encode_path_char(C) ->
     _  -> http_uri:encode([C])
   end.
 
+encode_query(Q) ->
+  intersperse($&, [encode_query_param(K, V) || {K, V} <- Q, V /= false]).
+
+encode_query_param(K, true) ->
+  [http_uri:encode(K)];
+encode_query_param(K, V) when is_integer(V) ->
+  [http_uri:encode(K), "=", integer_to_list(V)];
+encode_query_param(K, V) when is_list(V) ->
+  [http_uri:encode(K), "=", http_uri:encode(V)].
+
+intersperse(_S, L = [_]) ->
+  L;
+intersperse(S, [X | Xs]) ->
+  [X, S | intersperse(S, Xs)].
 
 %%%-----------------------------------------------------------------------------
 %%% Tests
@@ -97,8 +121,11 @@ to_string_test() ->
   "https://localhost/" = to_string(U3),
   U4 = new(#{path => "foo"}),
   "https://localhost/foo" = to_string(U4),
-  U5 = new(#{path => "/path that needs encoding"}),
-  "https://localhost/path%20that%20needs%20encoding" = to_string(U5),
+  U5 = new(#{path => "/path that/needs encoding"}),
+  "https://localhost/path%20that/needs%20encoding" = to_string(U5),
+  %% Test query
+  U6 = new(#{query => [{"foo", true}, {"bar", 42}, {"b a z", "huh?"}]}),
+  "https://localhost?foo&bar=42&b%20a%20z=huh%3F" = to_string(U6),
   %% Done
   ok.
 
