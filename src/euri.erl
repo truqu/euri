@@ -12,10 +12,10 @@
 
 %% Record and macro definitions
 -record( uri
-       , { scheme = "https"   :: nonempty_string()
-         , host = "localhost" :: nonempty_string()
-         , port = 80          :: non_neg_integer()
-         , path = ""          :: string()
+       , { scheme :: nonempty_string()
+         , host :: nonempty_string()
+         , port :: non_neg_integer()
+         , path :: string()
          }
        ).
 
@@ -27,7 +27,11 @@ new() ->
   new(#{}).
 
 new(Args) ->
-  #uri{}.
+  #uri{ scheme = maps:get(scheme, Args, "https")
+      , host = maps:get(host, Args, "localhost")
+      , port = maps:get(port, Args, 80)
+      , path = maps:get(path, Args, "")
+      }.
 
 %%%-----------------------------------------------------------------------------
 %%% Tests
