@@ -41,11 +41,19 @@ new(Args) ->
 
 new_test() ->
   %% Test defaults
-  U = new(),
-  "https" = U#uri.scheme,
-  "localhost" = U#uri.host,
-  80 = U#uri.port,
-  "" = U#uri.path.
+  U1 = new(),
+  "https" = U1#uri.scheme,
+  "localhost" = U1#uri.host,
+  80 = U1#uri.port,
+  "" = U1#uri.path,
+  %% Test overrides
+  U2 = new(#{scheme => "http", host => "erlang.org", port => 8080, path => "/"}),
+  "http" = U2#uri.scheme,
+  "erlang.org" = U2#uri.host,
+  8080 = U2#uri.port,
+  "/" = U2#uri.path,
+  %% Done
+  ok.
 
 -endif.
 
