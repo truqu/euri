@@ -41,9 +41,27 @@ to_string(U) ->
         80 -> [];
         P  -> [":", integer_to_list(P)]
       end
-    , U#uri.path
+    , case U#uri.path of
+        ""           -> "";
+        [$/ | _] = P -> encode_path(P);
+        _ = P        -> [$/, encode_path(P)]
+      end
     ]
    ).
+
+%%%-----------------------------------------------------------------------------
+%%% Internal functions
+%%%-----------------------------------------------------------------------------
+
+encode_path(P) ->
+  [encode_path_char(C) || C <- P].
+
+encode_path_char(C) ->
+  case C of
+    $/ -> C;
+    _  -> http_uri:encode([C])
+  end.
+
 
 %%%-----------------------------------------------------------------------------
 %%% Tests
@@ -74,6 +92,13 @@ to_string_test() ->
   %% Test port
   U2 = new(#{port => 8080}),
   "https://localhost:8080" = to_string(U2),
+  %% Test path
+  U3 = new(#{path => "/"}),
+  "https://localhost/" = to_string(U3),
+  U4 = new(#{path => "foo"}),
+  "https://localhost/foo" = to_string(U4),
+  U5 = new(#{path => "/path that needs encoding"}),
+  "https://localhost/path%20that%20needs%20encoding" = to_string(U5),
   %% Done
   ok.
 
