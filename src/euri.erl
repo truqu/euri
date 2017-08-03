@@ -7,6 +7,7 @@
 %% API exports
 -export([ new/0
         , new/1
+        , to_string/1
         ]
        ).
 
@@ -33,6 +34,17 @@ new(Args) ->
       , path = maps:get(path, Args, "")
       }.
 
+to_string(U) ->
+  lists:flatten(
+    [ U#uri.scheme, "://", U#uri.host
+    , case U#uri.port of
+        80 -> [];
+        P  -> [":", integer_to_list(P)]
+      end
+    , U#uri.path
+    ]
+   ).
+
 %%%-----------------------------------------------------------------------------
 %%% Tests
 %%%-----------------------------------------------------------------------------
@@ -52,6 +64,16 @@ new_test() ->
   "erlang.org" = U2#uri.host,
   8080 = U2#uri.port,
   "/" = U2#uri.path,
+  %% Done
+  ok.
+
+to_string_test() ->
+  %% Test simplest case
+  U1 = new(),
+  "https://localhost" = to_string(U1),
+  %% Test port
+  U2 = new(#{port => 8080}),
+  "https://localhost:8080" = to_string(U2),
   %% Done
   ok.
 
