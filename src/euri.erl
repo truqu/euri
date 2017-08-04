@@ -53,9 +53,9 @@ new(Args) ->
       , host = maps:get(host, Args, "localhost")
       , port = maps:get(port, Args, 80)
       , path_segments = case is_list_of_lists(Path) of
-                 true  -> Path;
-                 false -> string:tokens(Path, "/")
-               end
+                          true  -> Path;
+                          false -> string:tokens(Path, "/")
+                        end
       , query = maps:get(query, Args, [])
       , trailing_slash =
           case is_list_of_lists(Path) of
