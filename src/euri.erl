@@ -16,7 +16,7 @@
        , { scheme :: nonempty_string()
          , host :: nonempty_string()
          , port :: non_neg_integer()
-         , path :: string()
+         , path_segments :: [string()]
          , query :: [{nonempty_string(), boolean() | integer() | string()}]
          , trailing_slash :: boolean()
          }
@@ -27,7 +27,7 @@
 -type args() :: #{ scheme => nonempty_string()
                  , host => nonempty_string()
                  , port => non_neg_integer()
-                 , path => string()
+                 , path => string() | [string()]
                  , query => [{nonempty_string(), boolean() | integer() | string()}]
                  }.
 
@@ -46,12 +46,22 @@ new() ->
 
 -spec new(args()) -> uri().
 new(Args) ->
+  %% Get path
+  Path = maps:get(path, Args, ""),
+  %% Construct record
   #uri{ scheme = maps:get(scheme, Args, "https")
       , host = maps:get(host, Args, "localhost")
       , port = maps:get(port, Args, 80)
-      , path = maps:get(path, Args, "")
+      , path_segments = case is_list_of_lists(Path) of
+                 true  -> Path;
+                 false -> string:tokens(Path, "/")
+               end
       , query = maps:get(query, Args, [])
-      , trailing_slash = false
+      , trailing_slash =
+          case is_list_of_lists(Path) of
+            true  -> false;
+            false -> match == re:run(Path, "/$", [{capture, none}])
+          end
       }.
 
 -spec to_string(uri()) -> nonempty_string().
@@ -65,10 +75,17 @@ to_string(U) ->
         P  -> [":", integer_to_list(P)]
       end
       %% Path
-    , case U#uri.path of
-        ""           -> "";
-        [$/ | _] = P -> encode_path(P);
-        _ = P        -> [$/, encode_path(P)]
+    , case U#uri.path_segments of
+        [] -> "";
+        _  -> [ "/"
+              , string:join( [http_uri:encode(P) || P <- U#uri.path_segments]
+                           , "/"
+                           )
+              ]
+      end
+    , if
+        U#uri.trailing_slash -> "/";
+        true                 -> ""
       end
       %% Query
     , case U#uri.query of
@@ -81,15 +98,6 @@ to_string(U) ->
 %%%-----------------------------------------------------------------------------
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
-
-encode_path(P) ->
-  [encode_path_char(C) || C <- P].
-
-encode_path_char(C) ->
-  case C of
-    $/ -> C;
-    _  -> http_uri:encode([C])
-  end.
 
 encode_query(Q) ->
   intersperse($&, [encode_query_param(K, V) || {K, V} <- Q, V /= false]).
@@ -106,6 +114,9 @@ intersperse(_S, L = [_]) ->
 intersperse(S, [X | Xs]) ->
   [X, S | intersperse(S, Xs)].
 
+is_list_of_lists(L) ->
+  lists:all(fun (X) -> erlang:is_list(X) end, L).
+
 %%%-----------------------------------------------------------------------------
 %%% Tests
 %%%-----------------------------------------------------------------------------
@@ -118,13 +129,18 @@ new_test() ->
   "https" = U1#uri.scheme,
   "localhost" = U1#uri.host,
   80 = U1#uri.port,
-  "" = U1#uri.path,
+  [] = U1#uri.path_segments,
   %% Test overrides
   U2 = new(#{scheme => "http", host => "erlang.org", port => 8080, path => "/"}),
   "http" = U2#uri.scheme,
   "erlang.org" = U2#uri.host,
   8080 = U2#uri.port,
-  "/" = U2#uri.path,
+  [] = U2#uri.path_segments,
+  true = U2#uri.trailing_slash,
+  %% Test path segments
+  U3 = new(#{path => ["foo", "bar", "baz"]}),
+  ["foo", "bar", "baz"] = U3#uri.path_segments,
+  false = U3#uri.trailing_slash,
   %% Done
   ok.
 
@@ -145,6 +161,9 @@ to_string_test() ->
   %% Test query
   U6 = new(#{query => [{"foo", true}, {"bar", 42}, {"b a z", "huh?"}]}),
   "https://localhost?foo&bar=42&b%20a%20z=huh%3F" = to_string(U6),
+  %% Test path segments
+  U7 = new(#{path => ["foo", "bar", "baz"]}),
+  "https://localhost/foo/bar/baz" = to_string(U7),
   %% Done
   ok.
 
