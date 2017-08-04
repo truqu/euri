@@ -18,16 +18,20 @@
          , port :: non_neg_integer()
          , path :: string()
          , query :: [{nonempty_string(), boolean() | integer() | string()}]
+         , trailing_slash :: boolean()
          }
        ).
 
 -opaque uri() :: #uri{}.
 
--type args() :: #{ scheme => nonempty_string()
-                 , host => nonempty_string()
+-type args() :: #{ scheme => nonempty_string() | binary()
+                 , host => nonempty_string() | binary()
                  , port => non_neg_integer()
-                 , path => string()
-                 , query => [{nonempty_string(), boolean() | integer() | string()}]
+                 , path => string() | binary()
+                 , query => [ { nonempty_string()
+                              , boolean() | integer() | string() | binary()
+                              }
+                            ]
                  }.
 
 %% Type exports
@@ -45,11 +49,12 @@ new() ->
 
 -spec new(args()) -> uri().
 new(Args) ->
-  #uri{ scheme = maps:get(scheme, Args, "https")
-      , host = maps:get(host, Args, "localhost")
-      , port = maps:get(port, Args, 80)
-      , path = maps:get(path, Args, "")
-      , query = maps:get(query, Args, [])
+  #uri{ scheme = get_arg(scheme, Args, "https")
+      , host = get_arg(host, Args, "localhost")
+      , port = get_arg(port, Args, 80)
+      , path = get_arg(path, Args, "")
+      , query = get_arg(query, Args, [])
+      , trailing_slash = false
       }.
 
 -spec to_string(uri()) -> nonempty_string().
@@ -79,6 +84,13 @@ to_string(U) ->
 %%%-----------------------------------------------------------------------------
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
+
+get_arg(K, M, D) ->
+  V = maps:get(K, M, D),
+  if
+    is_binary(V) -> erlang:binary_to_list(V);
+    true         -> V
+  end.
 
 encode_path(P) ->
   [encode_path_char(C) || C <- P].
@@ -134,7 +146,7 @@ to_string_test() ->
   U2 = new(#{port => 8080}),
   "https://localhost:8080" = to_string(U2),
   %% Test path
-  U3 = new(#{path => "/"}),
+  U3 = new(#{path => <<"/">>}),
   "https://localhost/" = to_string(U3),
   U4 = new(#{path => "foo"}),
   "https://localhost/foo" = to_string(U4),
