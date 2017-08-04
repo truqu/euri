@@ -52,8 +52,8 @@ new(Args) ->
   %% Get path
   Path = maps:get(path, Args, ""),
   %% Construct record
-  #uri{ scheme = get_arg(scheme, Args, "https")
-      , host = get_arg(host, Args, "localhost")
+  #uri{ scheme = to_l(maps:get(scheme, Args, "https"))
+      , host = to_l(maps:get(host, Args, "localhost"))
       , port = maps:get(port, Args, 80)
       , path_segments = case is_list_of_lists(Path) of
                           true  -> Path;
@@ -102,12 +102,10 @@ to_string(U) ->
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
 
-get_arg(K, M, D) ->
-  V = maps:get(K, M, D),
-  if
-    is_binary(V) -> erlang:binary_to_list(V);
-    true         -> V
-  end.
+to_l(V) when is_binary(V) ->
+  erlang:binary_to_list(V);
+to_l(V) ->
+  V.
 
 encode_query(Q) ->
   intersperse($&, [encode_query_param(K, V) || {K, V} <- Q, V /= false]).
