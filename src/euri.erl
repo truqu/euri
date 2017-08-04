@@ -24,8 +24,10 @@
 
 -opaque uri() :: #uri{}.
 
--type args() :: #{ scheme => nonempty_string()
-                 , host => nonempty_string()
+-type nonempty_binary() :: <<_:8, _:_*8>>.
+
+-type args() :: #{ scheme => nonempty_string() | nonempty_binary()
+                 , host => nonempty_string() | nonempty_binary()
                  , port => non_neg_integer()
                  , path => string() | [nonempty_string()]
                  , query => [{nonempty_string(), boolean() | integer() | string()}]
@@ -34,6 +36,7 @@
 %% Type exports
 -export_type([ uri/0
              , args/0
+             , nonempty_binary/0
              ]).
 
 %%%-----------------------------------------------------------------------------
@@ -49,8 +52,8 @@ new(Args) ->
   %% Get path
   Path = maps:get(path, Args, ""),
   %% Construct record
-  #uri{ scheme = maps:get(scheme, Args, "https")
-      , host = maps:get(host, Args, "localhost")
+  #uri{ scheme = get_arg(scheme, Args, "https")
+      , host = get_arg(host, Args, "localhost")
       , port = maps:get(port, Args, 80)
       , path_segments = case is_list_of_lists(Path) of
                           true  -> Path;
@@ -99,6 +102,13 @@ to_string(U) ->
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
 
+get_arg(K, M, D) ->
+  V = maps:get(K, M, D),
+  if
+    is_binary(V) -> erlang:binary_to_list(V);
+    true         -> V
+  end.
+
 encode_query(Q) ->
   intersperse($&, [encode_query_param(K, V) || {K, V} <- Q, V /= false]).
 
@@ -131,7 +141,7 @@ new_test() ->
   80 = U1#uri.port,
   [] = U1#uri.path_segments,
   %% Test overrides
-  U2 = new(#{scheme => "http", host => "erlang.org", port => 8080, path => "/"}),
+  U2 = new(#{scheme => <<"http">>, host => "erlang.org", port => 8080, path => "/"}),
   "http" = U2#uri.scheme,
   "erlang.org" = U2#uri.host,
   8080 = U2#uri.port,
