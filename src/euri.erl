@@ -194,6 +194,14 @@ to_string_test() ->
   %% Done
   ok.
 
+is_list_of_lists_regression_test() ->
+  false = is_list_of_lists(<<"/">>),
+  ok.
+
+is_list_with_binary_regression_test() ->
+  false = is_list_with_binary(<<"/">>),
+  ok.
+
 -endif.
 
 %% Local variables:
