@@ -24,11 +24,14 @@
 
 -opaque uri() :: #uri{}.
 
--type args() :: #{ scheme => nonempty_string()
-                 , host => nonempty_string()
+-type args() :: #{ scheme => nonempty_string() | binary()
+                 , host => nonempty_string() | binary()
                  , port => non_neg_integer()
-                 , path => string()
-                 , query => [{nonempty_string(), boolean() | integer() | string()}]
+                 , path => string() | binary()
+                 , query => [ { nonempty_string()
+                              , boolean() | integer() | string() | binary()
+                              }
+                            ]
                  }.
 
 %% Type exports
