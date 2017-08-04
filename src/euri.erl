@@ -24,14 +24,11 @@
 
 -opaque uri() :: #uri{}.
 
--type args() :: #{ scheme => nonempty_string() | binary()
-                 , host => nonempty_string() | binary()
+-type args() :: #{ scheme => nonempty_string()
+                 , host => nonempty_string()
                  , port => non_neg_integer()
-                 , path => string() | binary()
-                 , query => [ { nonempty_string()
-                              , boolean() | integer() | string() | binary()
-                              }
-                            ]
+                 , path => string()
+                 , query => [{nonempty_string(), boolean() | integer() | string()}]
                  }.
 
 %% Type exports
@@ -49,31 +46,31 @@ new() ->
 
 -spec new(args()) -> uri().
 new(Args) ->
-  #uri{ scheme = get_arg(scheme, Args, "https")
-      , host = get_arg(host, Args, "localhost")
-      , port = get_arg(port, Args, 80)
-      , path = get_arg(path, Args, "")
-      , query = get_arg(query, Args, [])
+  #uri{ scheme = maps:get(scheme, Args, "https")
+      , host = maps:get(host, Args, "localhost")
+      , port = maps:get(port, Args, 80)
+      , path = maps:get(path, Args, "")
+      , query = maps:get(query, Args, [])
       , trailing_slash = false
       }.
 
 -spec to_string(uri()) -> nonempty_string().
 to_string(U) ->
   lists:flatten(
-    [ %% scheme and host
+    [ %% Scheme and host
       U#uri.scheme, "://", U#uri.host
-      %% port
+      %% Port
     , case U#uri.port of
         80 -> [];
         P  -> [":", integer_to_list(P)]
       end
-      %% path
+      %% Path
     , case U#uri.path of
         ""           -> "";
         [$/ | _] = P -> encode_path(P);
         _ = P        -> [$/, encode_path(P)]
       end
-      %% query
+      %% Query
     , case U#uri.query of
         [] -> [];
         Q  -> [$?, encode_query(Q)]
@@ -84,13 +81,6 @@ to_string(U) ->
 %%%-----------------------------------------------------------------------------
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
-
-get_arg(K, M, D) ->
-  V = maps:get(K, M, D),
-  if
-    is_binary(V) -> erlang:binary_to_list(V);
-    true         -> V
-  end.
 
 encode_path(P) ->
   [encode_path_char(C) || C <- P].
@@ -146,7 +136,7 @@ to_string_test() ->
   U2 = new(#{port => 8080}),
   "https://localhost:8080" = to_string(U2),
   %% Test path
-  U3 = new(#{path => <<"/">>}),
+  U3 = new(#{path => "/"}),
   "https://localhost/" = to_string(U3),
   U4 = new(#{path => "foo"}),
   "https://localhost/foo" = to_string(U4),
