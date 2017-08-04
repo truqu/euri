@@ -18,6 +18,7 @@
          , port :: non_neg_integer()
          , path :: string()
          , query :: [{nonempty_string(), boolean() | integer() | string()}]
+         , trailing_slash :: boolean()
          }
        ).
 
@@ -50,6 +51,7 @@ new(Args) ->
       , port = maps:get(port, Args, 80)
       , path = maps:get(path, Args, "")
       , query = maps:get(query, Args, [])
+      , trailing_slash = false
       }.
 
 -spec to_string(uri()) -> nonempty_string().
