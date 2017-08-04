@@ -137,12 +137,15 @@ intersperse(_S, L = [_]) ->
 intersperse(S, [X | Xs]) ->
   [X, S | intersperse(S, Xs)].
 
-is_list_of_lists(L) ->
-  lists:all(fun (X) -> erlang:is_list(X) end, L).
+is_list_of_lists(L) when is_list(L) ->
+  lists:all(fun (X) -> erlang:is_list(X) end, L);
+is_list_of_lists(_) ->
+  false.
 
-is_list_with_binary(L) ->
-  lists:any(fun (X) -> erlang:is_binary(X) end, L).
-
+is_list_with_binary(L) when is_list(L) ->
+  lists:any(fun (X) -> erlang:is_binary(X) end, L);
+is_list_with_binary(_) ->
+  false.
 
 %%%-----------------------------------------------------------------------------
 %%% Tests
@@ -192,6 +195,14 @@ to_string_test() ->
   U7 = new(#{path => ["foo", "bar", "baz"]}),
   "https://localhost/foo/bar/baz" = to_string(U7),
   %% Done
+  ok.
+
+is_list_of_lists_regression_test() ->
+  false = is_list_of_lists(<<"/">>),
+  ok.
+
+is_list_with_binary_regression_test() ->
+  false = is_list_with_binary(<<"/">>),
   ok.
 
 -endif.
