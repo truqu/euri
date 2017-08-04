@@ -24,16 +24,23 @@
 
 -opaque uri() :: #uri{}.
 
--type args() :: #{ scheme => nonempty_string()
-                 , host => nonempty_string()
+-type nonempty_binary() :: <<_:8, _:_*8>>.
+
+-type args() :: #{ scheme => nonempty_string() | nonempty_binary()
+                 , host => nonempty_string() | nonempty_binary()
                  , port => non_neg_integer()
-                 , path => string() | [nonempty_string()]
-                 , query => [{nonempty_string(), boolean() | integer() | string()}]
+                 , path => string() | binary()
+                         | [nonempty_string() | nonempty_binary()]
+                 , query => [ { atom() | nonempty_string() | nonempty_binary()
+                              , boolean() | integer() | string() | nonempty_binary()
+                              }
+                            ]
                  }.
 
 %% Type exports
 -export_type([ uri/0
              , args/0
+             , nonempty_binary/0
              ]).
 
 %%%-----------------------------------------------------------------------------
@@ -49,14 +56,18 @@ new(Args) ->
   %% Get path
   Path = maps:get(path, Args, ""),
   %% Construct record
-  #uri{ scheme = maps:get(scheme, Args, "https")
-      , host = maps:get(host, Args, "localhost")
+  #uri{ scheme = to_l(maps:get(scheme, Args, "https"))
+      , host = to_l(maps:get(host, Args, "localhost"))
       , port = maps:get(port, Args, 80)
       , path_segments = case is_list_of_lists(Path) of
-                 true  -> Path;
-                 false -> string:tokens(Path, "/")
-               end
-      , query = maps:get(query, Args, [])
+                          true  -> Path;
+                          false ->
+                            case is_list_with_binary(Path) of
+                              true  -> lists:map(fun to_l/1, Path);
+                              false -> string:tokens(to_l(Path), "/")
+                            end
+                        end
+      , query = [{to_l(K), b_to_l(V)} || {K, V} <- maps:get(query, Args, [])]
       , trailing_slash =
           case is_list_of_lists(Path) of
             true  -> false;
@@ -99,6 +110,18 @@ to_string(U) ->
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
 
+to_l(V) when is_binary(V) ->
+  erlang:binary_to_list(V);
+to_l(V) when is_atom(V) ->
+  erlang:atom_to_list(V);
+to_l(V) ->
+  V.
+
+b_to_l(V) when is_binary(V) ->
+  erlang:binary_to_list(V);
+b_to_l(V) ->
+  V.
+
 encode_query(Q) ->
   intersperse($&, [encode_query_param(K, V) || {K, V} <- Q, V /= false]).
 
@@ -117,6 +140,10 @@ intersperse(S, [X | Xs]) ->
 is_list_of_lists(L) ->
   lists:all(fun (X) -> erlang:is_list(X) end, L).
 
+is_list_with_binary(L) ->
+  lists:any(fun (X) -> erlang:is_binary(X) end, L).
+
+
 %%%-----------------------------------------------------------------------------
 %%% Tests
 %%%-----------------------------------------------------------------------------
@@ -131,7 +158,7 @@ new_test() ->
   80 = U1#uri.port,
   [] = U1#uri.path_segments,
   %% Test overrides
-  U2 = new(#{scheme => "http", host => "erlang.org", port => 8080, path => "/"}),
+  U2 = new(#{scheme => <<"http">>, host => "erlang.org", port => 8080, path => "/"}),
   "http" = U2#uri.scheme,
   "erlang.org" = U2#uri.host,
   8080 = U2#uri.port,
@@ -159,7 +186,7 @@ to_string_test() ->
   U5 = new(#{path => "/path that/needs encoding"}),
   "https://localhost/path%20that/needs%20encoding" = to_string(U5),
   %% Test query
-  U6 = new(#{query => [{"foo", true}, {"bar", 42}, {"b a z", "huh?"}]}),
+  U6 = new(#{query => [{foo, true}, {<<"bar">>, 42}, {"b a z", "huh?"}]}),
   "https://localhost?foo&bar=42&b%20a%20z=huh%3F" = to_string(U6),
   %% Test path segments
   U7 = new(#{path => ["foo", "bar", "baz"]}),
