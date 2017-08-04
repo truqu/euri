@@ -27,7 +27,7 @@
 -type args() :: #{ scheme => nonempty_string()
                  , host => nonempty_string()
                  , port => non_neg_integer()
-                 , path => string() | [string()]
+                 , path => string() | [nonempty_string()]
                  , query => [{nonempty_string(), boolean() | integer() | string()}]
                  }.
 
