@@ -60,20 +60,20 @@ new(Args) ->
 -spec to_string(uri()) -> nonempty_string().
 to_string(U) ->
   lists:flatten(
-    [ %% scheme and host
+    [ %% Scheme and host
       U#uri.scheme, "://", U#uri.host
-      %% port
+      %% Port
     , case U#uri.port of
         80 -> [];
         P  -> [":", integer_to_list(P)]
       end
-      %% path
+      %% Path
     , case U#uri.path of
         ""           -> "";
         [$/ | _] = P -> encode_path(P);
         _ = P        -> [$/, encode_path(P)]
       end
-      %% query
+      %% Query
     , case U#uri.query of
         [] -> [];
         Q  -> [$?, encode_query(Q)]
