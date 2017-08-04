@@ -31,7 +31,10 @@
                  , port => non_neg_integer()
                  , path => string() | binary()
                          | [nonempty_string() | nonempty_binary()]
-                 , query => [{nonempty_string(), boolean() | integer() | string()}]
+                 , query => [ { atom() | nonempty_string() | nonempty_binary()
+                              , boolean() | integer() | string() | nonempty_binary()
+                              }
+                            ]
                  }.
 
 %% Type exports
@@ -64,7 +67,7 @@ new(Args) ->
                               false -> string:tokens(to_l(Path), "/")
                             end
                         end
-      , query = maps:get(query, Args, [])
+      , query = [{to_l(K), b_to_l(V)} || {K, V} <- maps:get(query, Args, [])]
       , trailing_slash =
           case is_list_of_lists(Path) of
             true  -> false;
@@ -109,7 +112,14 @@ to_string(U) ->
 
 to_l(V) when is_binary(V) ->
   erlang:binary_to_list(V);
+to_l(V) when is_atom(V) ->
+  erlang:atom_to_list(V);
 to_l(V) ->
+  V.
+
+b_to_l(V) when is_binary(V) ->
+  erlang:binary_to_list(V);
+b_to_l(V) ->
   V.
 
 encode_query(Q) ->
@@ -176,7 +186,7 @@ to_string_test() ->
   U5 = new(#{path => "/path that/needs encoding"}),
   "https://localhost/path%20that/needs%20encoding" = to_string(U5),
   %% Test query
-  U6 = new(#{query => [{"foo", true}, {"bar", 42}, {"b a z", "huh?"}]}),
+  U6 = new(#{query => [{foo, true}, {<<"bar">>, 42}, {"b a z", "huh?"}]}),
   "https://localhost?foo&bar=42&b%20a%20z=huh%3F" = to_string(U6),
   %% Test path segments
   U7 = new(#{path => ["foo", "bar", "baz"]}),
