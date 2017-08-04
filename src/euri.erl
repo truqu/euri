@@ -29,7 +29,8 @@
 -type args() :: #{ scheme => nonempty_string() | nonempty_binary()
                  , host => nonempty_string() | nonempty_binary()
                  , port => non_neg_integer()
-                 , path => string() | [nonempty_string()]
+                 , path => string() | binary()
+                         | [nonempty_string() | nonempty_binary()]
                  , query => [{nonempty_string(), boolean() | integer() | string()}]
                  }.
 
@@ -57,7 +58,11 @@ new(Args) ->
       , port = maps:get(port, Args, 80)
       , path_segments = case is_list_of_lists(Path) of
                           true  -> Path;
-                          false -> string:tokens(Path, "/")
+                          false ->
+                            case is_list_with_binary(Path) of
+                              true  -> lists:map(fun to_l/1, Path);
+                              false -> string:tokens(to_l(Path), "/")
+                            end
                         end
       , query = maps:get(query, Args, [])
       , trailing_slash =
@@ -124,6 +129,10 @@ intersperse(S, [X | Xs]) ->
 
 is_list_of_lists(L) ->
   lists:all(fun (X) -> erlang:is_list(X) end, L).
+
+is_list_with_binary(L) ->
+  lists:any(fun (X) -> erlang:is_binary(X) end, L).
+
 
 %%%-----------------------------------------------------------------------------
 %%% Tests
