@@ -8,6 +8,7 @@
 -export([ new/0
         , new/1
         , to_string/1
+        , to_binary/1
         ]
        ).
 
@@ -106,6 +107,10 @@ to_string(U) ->
     ]
    ).
 
+-spec to_binary(uri()) -> nonempty_binary().
+to_binary(U) ->
+  list_to_binary(to_string(U)).
+
 %%%-----------------------------------------------------------------------------
 %%% Internal functions
 %%%-----------------------------------------------------------------------------
@@ -194,6 +199,12 @@ to_string_test() ->
   %% Test path segments
   U7 = new(#{path => ["foo", "bar", "baz"]}),
   "https://localhost/foo/bar/baz" = to_string(U7),
+  %% Done
+  ok.
+
+to_binary_test() ->
+  %% Test
+  <<"https://localhost">> = to_binary(new()),
   %% Done
   ok.
 

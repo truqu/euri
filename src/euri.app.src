@@ -1,7 +1,7 @@
 { application
 , euri,
  [ {description, "An OTP library for constructing URIs"}
- , {vsn, "0.5.1"}
+ , {vsn, "0.6.0"}
  , {registered, []},
    {applications, [ kernel
                   , stdlib
