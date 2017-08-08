@@ -8,7 +8,9 @@
 -export([ new/0
         , new/1
         , to_string/1
+        , to_string/2
         , to_binary/1
+        , to_binary/2
         ]
        ).
 
@@ -78,22 +80,34 @@ new(Args) ->
 
 -spec to_string(uri()) -> nonempty_string().
 to_string(U) ->
+  to_string(U, []).
+
+-spec to_string(uri(), [atom()]) -> nonempty_string().
+to_string(U, Opts) ->
+  Relative = lists:member(relative, Opts),
   lists:flatten(
-    [ %% Scheme and host
-      U#uri.scheme, "://", U#uri.host
-      %% Port
-    , case U#uri.port of
-        80 -> [];
-        P  -> [":", integer_to_list(P)]
+    [ %% Scheme, host, and port
+      if
+        Relative ->
+          [];
+        true ->
+          [ U#uri.scheme, "://", U#uri.host
+          , case U#uri.port of
+              80 -> [];
+              P  -> [":", integer_to_list(P)]
+            end
+          ]
       end
       %% Path
-    , case U#uri.path_segments of
-        [] -> "";
-        _  -> [ "/"
-              , string:join( [http_uri:encode(P) || P <- U#uri.path_segments]
-                           , "/"
-                           )
-              ]
+    , case {U#uri.path_segments, Relative} of
+        {[], false} ->
+          "";
+        {[], true} ->
+          "/";
+        {_, _} ->
+          [ "/"
+          , string:join([http_uri:encode(P) || P <- U#uri.path_segments] , "/")
+          ]
       end
     , if
         U#uri.trailing_slash -> "/";
@@ -109,7 +123,11 @@ to_string(U) ->
 
 -spec to_binary(uri()) -> nonempty_binary().
 to_binary(U) ->
-  list_to_binary(to_string(U)).
+  to_binary(U, []).
+
+-spec to_binary(uri(), [atom()]) -> nonempty_binary().
+to_binary(U, Opts) ->
+  list_to_binary(to_string(U, Opts)).
 
 %%%-----------------------------------------------------------------------------
 %%% Internal functions
@@ -183,6 +201,7 @@ to_string_test() ->
   %% Test simplest case
   U1 = new(),
   "https://localhost" = to_string(U1),
+  "/" = to_string(U1, [relative]),
   %% Test port
   U2 = new(#{port => 8080}),
   "https://localhost:8080" = to_string(U2),
