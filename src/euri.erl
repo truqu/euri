@@ -59,9 +59,14 @@ new(Args) ->
   %% Get path
   Path = maps:get(path, Args, ""),
   %% Construct record
-  #uri{ scheme = to_l(maps:get(scheme, Args, "https"))
+  Scheme = to_l(maps:get(scheme, Args, "https")),
+  #uri{ scheme = Scheme
       , host = to_l(maps:get(host, Args, "localhost"))
-      , port = maps:get(port, Args, 80)
+      , port = maps:get(port, Args, case Scheme of
+                                      "http"  -> 80;
+                                      "https" -> 443
+                                    end
+                       )
       , path_segments = case is_list_of_lists(Path) of
                           true  -> Path;
                           false ->
@@ -93,8 +98,9 @@ to_string(U, Opts) ->
         true ->
           [ U#uri.scheme, "://", U#uri.host
           , case U#uri.port of
-              80 -> [];
-              P  -> [":", integer_to_list(P)]
+              80  -> [];
+              443 -> [];
+              P   -> [":", integer_to_list(P)]
             end
           ]
       end
@@ -181,7 +187,7 @@ new_test() ->
   U1 = new(),
   "https" = U1#uri.scheme,
   "localhost" = U1#uri.host,
-  80 = U1#uri.port,
+  443 = U1#uri.port,
   [] = U1#uri.path_segments,
   %% Test overrides
   U2 = new(#{scheme => <<"http">>, host => "erlang.org", port => 8080, path => "/"}),
