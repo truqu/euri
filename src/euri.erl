@@ -29,21 +29,24 @@
 
 -type nonempty_binary() :: <<_:8, _:_*8>>.
 
+-type query() ::[ { atom() | nonempty_string() | nonempty_binary()
+                  , boolean() | integer() | string() | nonempty_binary()
+                  }
+                ]
+
 -type args() :: #{ scheme => nonempty_string() | nonempty_binary()
                  , host => nonempty_string() | nonempty_binary()
                  , port => non_neg_integer()
                  , path => string() | binary()
                          | [nonempty_string() | nonempty_binary()]
-                 , query => [ { atom() | nonempty_string() | nonempty_binary()
-                              , boolean() | integer() | string() | nonempty_binary()
-                              }
-                            ]
+                 , query => query()
                  }.
 
 %% Type exports
 -export_type([ uri/0
              , args/0
              , nonempty_binary/0
+             , query/0
              ]).
 
 %%%-----------------------------------------------------------------------------
