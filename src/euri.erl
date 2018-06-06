@@ -29,10 +29,10 @@
 
 -type nonempty_binary() :: <<_:8, _:_*8>>.
 
--type query() ::[ { atom() | nonempty_string() | nonempty_binary()
-                  , boolean() | integer() | string() | nonempty_binary()
-                  }
-                ]
+-type query() :: [ { atom() | nonempty_string() | nonempty_binary()
+                   , boolean() | integer() | string() | nonempty_binary()
+                   }
+                 ].
 
 -type args() :: #{ scheme => nonempty_string() | nonempty_binary()
                  , host => nonempty_string() | nonempty_binary()

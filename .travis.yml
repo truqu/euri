@@ -1,0 +1,4 @@
+sudo: false
+language: erlang
+otp_release: 20.2
+script: rebar3 do eunit, dialyzer
