@@ -29,7 +29,7 @@
 
 -type nonempty_binary() :: <<_:8, _:_*8>>.
 
--type path() :: string() | binary() | [nonempty_string() | nonempty_binary()]
+-type path() :: string() | binary() | [nonempty_string() | nonempty_binary()].
 
 -type query() :: [ { atom() | nonempty_string() | nonempty_binary()
                    , boolean() | integer() | string() | nonempty_binary()
