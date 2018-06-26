@@ -1,13 +1,15 @@
 { application
 , euri,
- [ {description, "An OTP library for constructing URIs"}
+ [ {description, "An Erlang library for constructing URIs"}
  , {vsn, "0.9.2"}
+ , {modules, []}
  , {registered, []},
    {applications, [ kernel
                   , stdlib
                   ]
    }
  , {env,[]}
- , {modules, []}
+ , {licenses, ["https://github.com/truqu/euri/blob/develop/LICENSE"]}
+ , {links, [{"GitHub", "https://github.com/truqu/euri"}]}
  ]
 }.

@@ -31,8 +31,8 @@
 
 -type path() :: string() | binary() | [nonempty_string() | nonempty_binary()].
 
--type query() :: [ { atom() | nonempty_string() | nonempty_binary()
-                   , boolean() | integer() | string() | nonempty_binary()
+-type query() :: [ { Key :: atom() | nonempty_string() | nonempty_binary()
+                   , Value :: boolean() | integer() | string() | nonempty_binary()
                    }
                  ].
 
@@ -43,22 +43,38 @@
                  , query => query()
                  }.
 
+-type option() :: relative.
+
 %% Type exports
 -export_type([ uri/0
              , args/0
              , nonempty_binary/0
              , query/0
              , path/0
+             , option/0
              ]).
 
 %%%-----------------------------------------------------------------------------
 %%% API functions
 %%%-----------------------------------------------------------------------------
 
+%% @doc Create a new, "empty" URI.
+%%
+%% This will default to an uri pointing to `https://localhost'. In other words,
+%% the scheme will be set to `https', the port to `443', the host to `localhost'
+%% and both the path and the query will be left empty.
+%%
+%% This is equivalent to calling `euri:new(#{})'.
 -spec new() -> uri().
 new() ->
   new(#{}).
 
+%% @doc Create a URI from {@type args()}.
+%%
+%% Note that all the values in {@type args()} are optional. When not supplied,
+%% defaults will be used: `scheme' defaults to `https', `host' defaults to
+%% `localhost', `port' to `443' and the `path' and `query' are left empty when
+%% not supplied.
 -spec new(args()) -> uri().
 new(Args) ->
   %% Get path
@@ -88,11 +104,29 @@ new(Args) ->
           end
       }.
 
+%% @doc Turn a {@type uri()} into a `string()'.
+%%
+%% By default, this will be an absolute URL including the scheme, hostname and
+%% port (unless the port is the default port for the given scheme).
+%%
+%% ```
+%%    Uri = euri:new(),
+%%    "https://localhost" = euri:to_string(Uri).
+%%
+%%    Uri = euri:new(#{host => "neverssl.com", scheme => "http"}).
+%%    "http://neverssl.com" = euri:to_string(Uri).
+%% '''
+%%
+%% This is equivalent to calling `euri:to_string(Uri, [])'.
 -spec to_string(uri()) -> nonempty_string().
 to_string(U) ->
   to_string(U, []).
 
--spec to_string(uri(), [atom()]) -> nonempty_string().
+%% @doc Turn a {@type uri()} into a `string()' with some options.
+%%
+%% Currently, the only {@type option()} is `relative' which will make this
+%% function return an URL relative to the root of the hostname.
+-spec to_string(uri(), [option()]) -> nonempty_string().
 to_string(U, Opts) ->
   Relative = lists:member(relative, Opts),
   lists:flatten(
@@ -132,11 +166,13 @@ to_string(U, Opts) ->
     ]
    ).
 
+%% @doc Same as {@link to_string/1} but returns a `binary()'.
 -spec to_binary(uri()) -> nonempty_binary().
 to_binary(U) ->
   to_binary(U, []).
 
--spec to_binary(uri(), [atom()]) -> nonempty_binary().
+%% @doc Same as {@link to_string/2} but returns a `binary()'.
+-spec to_binary(uri(), [option()]) -> nonempty_binary().
 to_binary(U, Opts) ->
   list_to_binary(to_string(U, Opts)).
 
