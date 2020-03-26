@@ -1,7 +1,7 @@
 { application
 , euri,
  [ {description, "An Erlang library for constructing URIs"}
- , {vsn, "0.9.3"}
+ , {vsn, "0.9.4"}
  , {modules, []}
  , {registered, []},
    {applications, [ kernel
