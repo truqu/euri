@@ -1,0 +1,22 @@
+name: CI
+
+on: push
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        erl: [21, 22, 23]
+
+    container:
+      image: erlang:${{ matrix.erl }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: rebar3 eunit
+    - name: Run dialyzer
+      run: rebar3 dialyzer
+    - name: Run formatting check
+      run: rebar3 format --verify
