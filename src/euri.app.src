@@ -1,16 +1,12 @@
 { application
-, euri,
- [ {description, "An Erlang library for constructing URIs"}
- , {vsn, "0.9.4"}
- , {modules, []}
- , {registered, []},
-   {applications, [ kernel
-                  , stdlib
-                  , inets
-                  ]
-   }
- , {env,[]}
- , {licenses, ["https://github.com/truqu/euri/blob/develop/LICENSE"]}
- , {links, [{"GitHub", "https://github.com/truqu/euri"}]}
- ]
+, euri
+, [ {description, "An Erlang library for constructing URIs"}
+  , {vsn, "0.10.0"}
+  , {modules, []}
+  , {registered, []}
+  , {applications, [kernel, stdlib, inets]}
+  , {env, []}
+  , {licenses, ["https://github.com/truqu/euri/blob/develop/LICENSE"]}
+  , {links, [{"GitHub", "https://github.com/truqu/euri"}]}
+  ]
 }.
