@@ -22,7 +22,13 @@
 
 -opaque uri() :: #uri{}.
 
+-if(?OTP_RELEASE < 24).
+
+%% From OTP 24 onwards, `nonempty_binary/0` is predefined
 -type nonempty_binary() :: <<_:8, _:_*8>>.
+
+-endif.
+
 -type path() :: string() | binary() | [nonempty_string() | nonempty_binary()].
 -type query() :: [{ Key :: atom() | nonempty_string() | nonempty_binary()
                   , Value :: boolean() | integer() | string() | nonempty_binary()
